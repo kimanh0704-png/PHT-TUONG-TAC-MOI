@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phiếu Học Tập - Liên kết ion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Roboto', sans-serif; background-color: #f3f4f6; color: #1f2937; }
+        .gradient-header { background: linear-gradient(135deg, #3b82f6, #4f46e5, #9333ea); }
+        .card-shadow { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .section-hidden { display: none !important; }
+        
+        /* Custom styles cho các dạng bài */
+        .tf-btn { transition: all 0.2s; }
+        .tf-btn.selected-true { background-color: #3b82f6; color: white; border-color: #3b82f6; }
+        .tf-btn.selected-false { background-color: #f97316; color: white; border-color: #f97316; }
+        
+        .match-item { cursor: pointer; transition: all 0.2s; user-select: none; }
+        .match-item.active { box-shadow: 0 0 0 3px #6366f1; border-color: transparent; }
+        
+        /* Màu cho các cặp nối */
+        .match-color-0 { background-color: #fee2e2; border-color: #fca5a5; }
+        .match-color-1 { background-color: #dcfce7; border-color: #86efac; }
+        .match-color-2 { background-color: #e0e7ff; border-color: #a5b4fc; }
+        .match-color-3 { background-color: #fef08a; border-color: #fde047; }
+        
+        .draggable { cursor: grab; user-select: none; transition: transform 0.1s; }
+        .draggable:active { cursor: grabbing; transform: scale(0.95); }
+        .draggable.tap-selected { box-shadow: 0 0 0 3px #ec4899; }
+        .dropzone { min-height: 60px; transition: all 0.2s; }
+        .dropzone.drag-over { background-color: #fce7f3; border-color: #ec4899; }
+        
+        /* Trạng thái chấm điểm */
+        .correct-bg { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #166534; }
+        .wrong-bg { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b; }
+        
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="pb-20">
+
+<header class="gradient-header text-white pt-10 pb-16 px-4 text-center rounded-b-[2.5rem] shadow-lg relative">
+    <button onclick="openAdmin()" class="absolute top-4 right-4 bg-white/20 hover:bg-white/30 p-2 rounded-full backdrop-blur-sm transition">
+        <i class="fas fa-cog text-xl"></i>
+    </button>
+    <h1 class="text-sm font-semibold tracking-wider uppercase opacity-80 mb-2">Phiếu Học Tập Tương Tác</h1>
+    <h2 id="display-title" class="text-3xl md:text-4xl font-bold mb-6">Liên kết ion</h2>
+    
+    <div class="max-w-2xl mx-auto bg-white/10 backdrop-blur-md p-6 rounded-2xl border border-white/20 text-left">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium mb-1 opacity-80">Họ và tên học sinh:</label>
+                <input type="text" id="student-name" class="w-full bg-white/20 border border-white/30 rounded-lg px-4 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white" placeholder="Nhập tên của em...">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1 opacity-80">Lớp:</label>
+                <input type="text" id="student-class" class="w-full bg-white/20 border border-white/30 rounded-lg px-4 py-2 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white" placeholder="Nhập lớp...">
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-4xl mx-auto px-4 -mt-8 relative z-10">
+    
+    <div class="bg-white rounded-2xl p-6 card-shadow mb-8 border-l-4 border-blue-500">
+        <h3 class="text-lg font-bold text-blue-700 mb-3"><i class="fas fa-bullseye mr-2"></i>Mục tiêu & Hướng dẫn</h3>
+        <ul class="list-disc pl-5 space-y-1 text-gray-600">
+            <li>Hiểu được sự hình thành liên kết ion.</li>
+            <li>Biết được đặc điểm của hợp chất ion.</li>
+            <li><strong>Hướng dẫn:</strong> Đọc kỹ từng câu hỏi và tương tác trực tiếp trên phiếu (chọn đáp án, điền từ, kéo thả).</li>
+            <li>Nhấn nút <strong>NỘP BÀI</strong> ở cuối trang để xem điểm.</li>
+        </ul>
+    </div>
+
+    <div id="worksheet-content">
+        <!-- Các khu vực sẽ được render bằng JavaScript để dễ quản lý trạng thái bật/tắt -->
+    </div>
+
+    <div class="text-center mt-12 mb-8">
+        <button id="submit-btn" onclick="gradeWorksheet()" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xl py-4 px-12 rounded-full shadow-xl transform transition hover:scale-105 active:scale-95">
+            <i class="fas fa-paper-plane mr-2"></i> NỘP BÀI & CHẤM ĐIỂM
+        </button>
+    </div>
+
+    <div id="result-box" class="hidden bg-white rounded-2xl p-8 card-shadow mb-8 text-center border-t-8 border-green-500">
+        <h3 class="text-2xl font-bold text-gray-800 mb-2">KẾT QUẢ CỦA EM</h3>
+        <div class="text-5xl font-black text-blue-600 mb-4"><span id="final-score">0</span> / <span id="max-score-display">10</span></div>
+        <p id="feedback-message" class="text-lg text-gray-600 font-medium"></p>
+    </div>
+
+    <div class="bg-yellow-50 rounded-2xl p-6 border border-yellow-200 shadow-sm mb-8">
+        <h3 class="text-lg font-bold text-yellow-700 mb-3"><i class="fas fa-lightbulb text-yellow-500 mr-2"></i>GHI NHỚ SIÊU NHANH</h3>
+        <ul class="list-none space-y-2 text-gray-700">
+            <li><i class="fas fa-check text-green-500 mr-2"></i> <strong>Liên kết ion</strong>: Lực hút tĩnh điện giữa Cation (+) và Anion (-).</li>
+            <li><i class="fas fa-check text-green-500 mr-2"></i> <strong>Bản chất</strong>: Thường giữa Kim loại điển hình (nhường e) & Phi kim điển hình (nhận e).</li>
+            <li><i class="fas fa-check text-green-500 mr-2"></i> <strong>Quy tắc octet</strong>: Nguyên tử có xu hướng đạt 8e lớp ngoài cùng (như Khí hiếm).</li>
+            <li><i class="fas fa-check text-green-500 mr-2"></i> <strong>Đặc điểm hợp chất ion</strong>: Trạng thái rắn, nhiệt độ nóng chảy/sôi cao, tan trong nước dẫn điện.</li>
+        </ul>
+    </div>
+</main>
+
+<div id="admin-login-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+    <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full mx-4">
+        <h3 class="text-2xl font-bold mb-4 text-center text-gray-800">Bảo Mật Giáo Viên</h3>
+        <p class="text-sm text-gray-500 mb-6 text-center">Vui lòng nhập mật khẩu để truy cập cài đặt.</p>
+        <input type="password" id="admin-pwd" class="w-full border-2 border-gray-300 rounded-lg px-4 py-3 mb-4 focus:outline-none focus:border-blue-500 text-center text-xl tracking-widest" placeholder="••••">
+        <div class="flex gap-3">
+            <button onclick="closeAdminLogin()" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-300 transition">Hủy</button>
+            <button onclick="verifyAdmin()" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition">Xác nhận</button>
+        </div>
+        <p id="admin-err" class="text-red-500 text-sm mt-3 text-center hidden">Mật khẩu không đúng!</p>
+    </div>
+</div>
+
+<div id="admin-panel" class="fixed inset-0 bg-gray-100 z-50 hidden flex flex-col">
+    <div class="bg-white shadow-md px-6 py-4 flex justify-between items-center z-10 relative">
+        <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-cog text-blue-600 mr-2"></i> Cài Đặt Phiếu Học Tập</h2>
+        <button onclick="closeAdminPanel()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-medium transition">Đóng</button>
+    </div>
+    
+    <div class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-4xl mx-auto space-y-6">
+            
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="font-bold text-lg mb-4 border-b pb-2">Thông tin chung</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tên bài học</label>
+                        <input type="text" id="cfg-title" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tổng điểm toàn phiếu</label>
+                        <input type="number" id="cfg-total-score" class="w-full border border-gray-300 rounded-lg px-3 py-2" step="0.5">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="font-bold text-lg mb-4 border-b pb-2 flex justify-between items-center">
+                    Cấu trúc & Điểm số
+                    <span id="score-warning" class="text-sm text-red-500 font-normal hidden"><i class="fas fa-exclamation-triangle"></i> Tổng điểm các phần chưa khớp!</span>
+                </h3>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-600 text-sm">
+                                <th class="p-3 border-b">Khu vực</th>
+                                <th class="p-3 border-b text-center">Bật/Tắt</th>
+                                <th class="p-3 border-b text-center">Điểm tối đa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="config-sections-body">
+                            <!-- JS gen render -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-4 text-right font-bold text-gray-700">
+                    Tổng điểm phân bổ: <span id="current-distributed-score" class="text-blue-600 text-xl">0</span>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="font-bold text-lg mb-4 border-b pb-2">Dữ liệu Kéo thả hình ảnh (Khu vực 5)</h3>
+                <p class="text-sm text-gray-500 mb-4">Mặc định hệ thống dùng Text (dữ liệu chữ). Bạn có thể tải ảnh lên để thay thế.</p>
+                <div id="admin-dnd-items" class="space-y-4">
+                    <!-- JS Gen -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <div class="bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] px-6 py-4 flex justify-end gap-4 z-10 relative">
+        <button onclick="resetConfig()" class="px-6 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 transition">Khôi phục mặc định</button>
+        <button onclick="saveConfig()" class="px-8 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 shadow-md transition">Lưu Cấu Hình</button>
+    </div>
+</div>
+
+<script>
+    // Dữ liệu nội dung lấy từ prompt
+    const defaultData = {
+        title: "Liên kết ion",
+        totalScore: 10,
+        sections: {
+            mcq: {
+                id: "mcq",
+                name: "I. TRẮC NGHIỆM NHANH",
+                active: true,
+                points: 2,
+                color: "blue",
+                questions: [
+                    { q: "Biểu diễn sự tạo thành ion nào sau đây đúng?", opts: ["A. Al + 3e → Al<sup>3+</sup>", "B. Cl → Cl<sup>-</sup> + 1e", "C. Cl<sub>2</sub> → 2Cl<sup>-</sup> + 2e", "D. Al → Al<sup>3+</sup> + 3e"], ans: 3 }, // D
+                    { q: "Liên kết ion là loại liên kết hoá học được hình thành nhờ lực hút tĩnh điện giữa các phần tử nào sau đây?", opts: ["A. Cation và anion.", "B. Các anion.", "C. Cation và các electron tự do.", "D. Electron và hạt nhân nguyên tử."], ans: 0 }, // A
+                    { q: "Liên kết ion thường tạo thành giữa hai nguyên tử", opts: ["A. kim loại điển hình.", "B. phi kim điển hình.", "C. kim loại và phi kim.", "D. kim loại điển hình và phi kim điển hình."], ans: 3 }, // D
+                    { q: "Đặc điểm nào sau đây không phải của hợp chất ion?", opts: ["A. Nhiệt độ nóng chảy thấp.", "B. Thường là chất rắn ở điều kiện thường.", "C. Tan nhiều trong nước.", "D. Dung dịch dẫn được điện."], ans: 0 } // A
+                ]
+            },
+            fill: {
+                id: "fill",
+                name: "II. ĐIỀN KHUYẾT",
+                active: true,
+                points: 2,
+                color: "emerald",
+                questions: [
+                    { 
+                        text: "Các nguyên tử có xu hường nhường, nhận hoặc dùng chung electron để đạt cấu hình bền vững của [DROP]",
+                        opts: ["Kim loại", "Phi kim", "Halogen", "Khí hiếm"],
+                        ans: "Khí hiếm"
+                    },
+                    { 
+                        text: "Trong tinh thể NaCl, ion Na<sup>+</sup> và ion Cl<sup>-</sup> hút nhau bằng lực hút [DROP]",
+                        opts: ["Cộng hóa trị", "Từ trường", "Tĩnh điện", "Hấp dẫn"],
+                        ans: "Tĩnh điện"
+                    },
+                    { 
+                        text: "Các hợp chất ion thường tồn tại ở trạng thái [DROP] trong điều kiện thường.",
+                        opts: ["Rắn", "Lỏng", "Khí", "Vô định hình"],
+                        ans: "Rắn"
+                    },
+                    { 
+                        text: "Tinh thể ion rất bền vững nên chúng có nhiệt độ nóng chảy [DROP]",
+                        opts: ["Thấp", "Trung bình", "Rất thấp", "Cao"],
+                        ans: "Cao"
+                    }
+                ]
+            },
+            tf: {
+                id: "tf",
+                name: "III. ĐÚNG/SAI",
+                active: true,
+                points: 2,
+                color: "orange",
+                questions: [
+                    { q: "Liên kết ion được tạo thành do sự dùng chung electron.", ans: false },
+                    { q: "Ở điều kiện thường, các hợp chất ion là chất khí.", ans: false },
+                    { q: "Trong tinh thể sodium chloride, xung quanh 1 ion Na<sup>+</sup> có 6 ion Cl<sup>-</sup> gần nhất.", ans: true },
+                    { q: "Các hợp chất ion thường tan nhiều trong nước và tạo dung dịch dẫn được điện.", ans: true }
+                ]
+            },
+            match: {
+                id: "match",
+                name: "IV. NỐI CỘT",
+                active: true,
+                points: 2,
+                color: "purple",
+                pairs: [
+                    { a: "Cation", b: "Ion mang điện tích dương" },
+                    { a: "Anion", b: "Ion mang điện tích âm" },
+                    { a: "Ion K<sup>+</sup>", b: "Có 18 electron" },
+                    { a: "Ion F<sup>-</sup>", b: "Có 10 electron" } // Fix typo in prompt Ion F -> Ion F-
+                ]
+            },
+            dnd: {
+                id: "dnd",
+                name: "V. KÉO THẢ HÌNH ẢNH/DỮ LIỆU",
+                active: true,
+                points: 2,
+                color: "pink",
+                items: [
+                    { id: "d1", content: "1s<sup>2</sup>2s<sup>2</sup>2p<sup>6</sup>3s<sup>2</sup>3p<sup>6</sup>", type: "text", matchId: "z1" },
+                    { id: "d2", content: "1s<sup>2</sup>2s<sup>2</sup>2p<sup>6</sup>", type: "text", matchId: "z2" },
+                    { id: "d3", content: "Ca<sup>2+</sup>, Mg<sup>2+</sup>, NH<sub>4</sub><sup>+</sup>", type: "text", matchId: "z3" },
+                    { id: "d4", content: "Cl<sup>-</sup>, O<sup>2-</sup>, CO<sub>3</sub><sup>2-</sup>", type: "text", matchId: "z4" }
+                ],
+                zones: [
+                    { id: "z1", label: "Cấu hình electron của Ca<sup>2+</sup>" },
+                    { id: "z2", label: "Cấu hình electron của O<sup>2-</sup>" },
+                    { id: "z3", label: "Cation" },
+                    { id: "z4", label: "Anion" }
+                ]
+            }
+        }
+    };
+
+    let appData = JSON.parse(JSON.stringify(defaultData));
+    let isSubmitted = false;
+
+    // Load config from LocalStorage if exists
+    function loadConfig() {
+        const saved = localStorage.getItem('pht_lien_ket_ion_config');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                // Merge data (keep questions, update config)
+                appData.title = parsed.title;
+                appData.totalScore = parsed.totalScore;
+                Object.keys(parsed.sections).forEach(key => {
+                    if (appData.sections[key]) {
+                        appData.sections[key].active = parsed.sections[key].active;
+                        appData.sections[key].points = parsed.sections[key].points;
+                        if(parsed.sections[key].items) { // Handle dragged images overwrite
+                            parsed.sections[key].items.forEach((pItem, idx) => {
+                                // Chỉ ghi đè lại nội dung nếu giáo viên đã tải ảnh lên
+                                if (pItem.type === 'image' && appData.sections[key].items[idx]) {
+                                    appData.sections[key].items[idx].type = 'image';
+                                    appData.sections[key].items[idx].content = pItem.content;
+                                }
+                            });
+                        }
+                    }
+                });
+            } catch(e) { console.error("Error loading config", e); }
+        }
+    }
+
+    function renderWorksheet() {
+        document.getElementById('display-title').innerText = appData.title;
+        const container = document.getElementById('worksheet-content');
+        container.innerHTML = '';
+        isSubmitted = false;
+
+        // 1. MCQ
+        if (appData.sections.mcq.active) {
+            let html = `<div class="bg-white rounded-2xl p-6 card-shadow mb-6 border-t-4 border-blue-500" id="section-mcq">
+                <h3 class="text-xl font-bold text-blue-800 mb-4">${appData.sections.mcq.name}</h3>
+                <div class="space-y-6">`;
+            
+            appData.sections.mcq.questions.forEach((q, qIndex) => {
+                html += `<div class="question-block" data-ans="${q.ans}">
+                    <p class="font-medium text-gray-800 mb-3"><span class="font-bold">Câu ${qIndex + 1}:</span> ${q.q}</p>
+                    <div class="space-y-2">`;
+                q.opts.forEach((opt, oIndex) => {
+                    html += `<label class="flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-blue-50 transition opt-label">
+                        <input type="radio" name="mcq_${qIndex}" value="${oIndex}" class="mt-1 mr-3 w-4 h-4 text-blue-600 focus:ring-blue-500">
+                        <span class="text-gray-700">${opt}</span>
+                    </label>`;
+                });
+                html += `</div>
+                    <div class="feedback text-sm mt-2 font-medium hidden"></div>
+                </div>`;
+            });
+            html += `</div></div>`;
+            container.innerHTML += html;
+        }
+
+        // 2. FILL
+        if (appData.sections.fill.active) {
+            let html = `<div class="bg-white rounded-2xl p-6 card-shadow mb-6 border-t-4 border-emerald-500" id="section-fill">
+                <h3 class="text-xl font-bold text-emerald-800 mb-4">${appData.sections.fill.name}</h3>
+                <div class="space-y-4">`;
+            
+            appData.sections.fill.questions.forEach((q, qIndex) => {
+                let optionsHtml = `<option value="">-- Chọn --</option>`;
+                // Shuffle options for better UI
+                [...q.opts].sort(() => Math.random() - 0.5).forEach(opt => {
+                    optionsHtml += `<option value="${opt}">${opt}</option>`;
+                });
+                
+                const parts = q.text.split('[DROP]');
+                html += `<div class="question-block leading-loose text-gray-700 bg-emerald-50/50 p-4 rounded-lg border border-emerald-100" data-ans="${q.ans}">
+                    <span class="font-bold mr-2">${qIndex + 1}.</span>
+                    ${parts[0]}
+                    <select class="fill-select mx-1 px-3 py-1 bg-white border border-emerald-300 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-emerald-700">
+                        ${optionsHtml}
+                    </select>
+                    ${parts[1] || ''}
+                    <div class="feedback text-sm mt-1 font-medium hidden"></div>
+                </div>`;
+            });
+            html += `</div></div>`;
+            container.innerHTML += html;
+        }
+
+        // 3. TRUE/FALSE
+        if (appData.sections.tf.active) {
+            let html = `<div class="bg-white rounded-2xl p-6 card-shadow mb-6 border-t-4 border-orange-500" id="section-tf">
+                <h3 class="text-xl font-bold text-orange-800 mb-4">${appData.sections.tf.name}</h3>
+                <p class="text-sm text-gray-500 mb-4 italic">Bấm chọn Đúng hoặc Sai cho mỗi phát biểu.</p>
+                <div class="space-y-3">`;
+            
+            appData.sections.tf.questions.forEach((q, qIndex) => {
+                html += `<div class="question-block flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-orange-50/50 rounded-lg border border-orange-100" data-ans="${q.ans}">
+                    <p class="text-gray-800 mb-3 sm:mb-0 sm:pr-4 sm:flex-1"><span class="font-bold mr-2">${qIndex + 1}.</span>${q.q}</p>
+                    <div class="flex gap-2 shrink-0">
+                        <button type="button" class="tf-btn border border-gray-300 rounded-md px-6 py-2 font-bold text-gray-600 hover:bg-gray-100" onclick="selectTF(this, true, ${qIndex})">ĐÚNG</button>
+                        <button type="button" class="tf-btn border border-gray-300 rounded-md px-6 py-2 font-bold text-gray-600 hover:bg-gray-100" onclick="selectTF(this, false, ${qIndex})">SAI</button>
+                    </div>
+                    <input type="hidden" class="tf-answer" id="tf_ans_${qIndex}" value="">
+                    <div class="feedback text-sm mt-2 w-full sm:w-auto font-medium hidden"></div>
+                </div>`;
+            });
+            html += `</div></div>`;
+            container.innerHTML += html;
+        }
+
+        // 4. MATCHING
+        if (appData.sections.match.active) {
+            // Shuffle
+            const colA = appData.sections.match.pairs.map((p, i) => ({ id: `a_${i}`, text: p.a, origIdx: i })).sort(() => Math.random() - 0.5);
+            const colB = appData.sections.match.pairs.map((p, i) => ({ id: `b_${i}`, text: p.b, origIdx: i })).sort(() => Math.random() - 0.5);
+
+            let html = `<div class="bg-white rounded-2xl p-6 card-shadow mb-6 border-t-4 border-purple-500" id="section-match">
+                <h3 class="text-xl font-bold text-purple-800 mb-2">${appData.sections.match.name}</h3>
+                <p class="text-sm text-gray-500 mb-6 italic">Bấm chọn một mục ở Cột A, sau đó bấm vào mục tương ứng ở Cột B để nối.</p>
+                
+                <div class="flex flex-col md:flex-row gap-6 relative">
+                    <div class="flex-1 space-y-3" id="match-col-a">
+                        <div class="font-bold text-center text-purple-700 bg-purple-100 rounded p-2 mb-4">CỘT A</div>
+                        ${colA.map(item => `<div class="match-item col-a border-2 border-gray-200 rounded-xl p-4 text-center text-gray-700 bg-white hover:border-purple-300" data-id="${item.id}" data-orig="${item.origIdx}" onclick="handleMatchClick('a', this)">${item.text}</div>`).join('')}
+                    </div>
+                    
+                    <div class="flex-1 space-y-3" id="match-col-b">
+                        <div class="font-bold text-center text-purple-700 bg-purple-100 rounded p-2 mb-4">CỘT B</div>
+                        ${colB.map(item => `<div class="match-item col-b border-2 border-gray-200 rounded-xl p-4 text-center text-gray-700 bg-white hover:border-purple-300" data-id="${item.id}" data-orig="${item.origIdx}" onclick="handleMatchClick('b', this)">${item.text}</div>`).join('')}
+                    </div>
+                </div>
+            </div>`;
+            container.innerHTML += html;
+        }
+
+        // 5. DRAG & DROP
+        if (appData.sections.dnd.active) {
+            const items = [...appData.sections.dnd.items].sort(() => Math.random() - 0.5);
+            
+            let html = `<div class="bg-white rounded-2xl p-6 card-shadow mb-6 border-t-4 border-pink-500" id="section-dnd">
+                <h3 class="text-xl font-bold text-pink-800 mb-2">${appData.sections.dnd.name}</h3>
+                <p class="text-sm text-gray-500 mb-6 italic">Kéo thả (hoặc bấm chọn) dữ liệu màu hồng bên dưới vào các ô trống tương ứng.</p>
+                
+                <div class="flex flex-wrap gap-3 mb-8 p-4 bg-pink-50 rounded-xl min-h-[80px]" id="dnd-source" ondrop="drop(event)" ondragover="allowDrop(event)">
+                    ${items.map(item => {
+                        let contentHtml = item.type === 'image' 
+                            ? `<img src="${item.content}" class="max-h-16 mx-auto pointer-events-none rounded">` 
+                            : `<span class="pointer-events-none font-medium text-pink-800">${item.content}</span>`;
+                            
+                        return `<div class="draggable bg-white border-2 border-pink-300 rounded-lg p-3 shadow-sm text-center inline-block cursor-pointer hover:bg-pink-100 transition" 
+                             draggable="true" 
+                             id="${item.id}" 
+                             data-match="${item.matchId}"
+                             ondragstart="drag(event)"
+                             onclick="handleTapSelect(this)">
+                            ${contentHtml}
+                        </div>`;
+                    }).join('')}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
+            
+            appData.sections.dnd.zones.forEach((zone) => {
+                html += `<div class="flex flex-col border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                    <div class="bg-gray-100 p-3 font-medium text-gray-700 text-center border-b border-gray-200">
+                        ${zone.label}
+                    </div>
+                    <div class="dropzone p-3 flex-1 flex flex-col items-center justify-center bg-gray-50/50" 
+                         id="${zone.id}" 
+                         data-target="${zone.id}"
+                         ondrop="drop(event)" 
+                         ondragover="allowDrop(event)"
+                         onclick="handleTapDrop(this)">
+                         <span class="text-gray-400 text-sm italic pointer-events-none drop-hint">Thả vào đây</span>
+                    </div>
+                </div>`;
+            });
+            
+            html += `</div></div>`;
+            container.innerHTML += html;
+        }
+        
+        // Reset match logic state
+        matchState = { activeA: null, connections: [], colorIdx: 0 };
+        tapState = { selectedItem: null };
+    }
+
+    // True/False Logic
+    function selectTF(btn, val, qIndex) {
+        if(isSubmitted) return;
+        const container = btn.parentElement;
+        const btns = container.querySelectorAll('.tf-btn');
+        btns.forEach(b => b.className = 'tf-btn border border-gray-300 rounded-md px-6 py-2 font-bold text-gray-600 hover:bg-gray-100');
+        
+        if (val) {
+            btn.className = 'tf-btn selected-true border rounded-md px-6 py-2 font-bold shadow-md';
+        } else {
+            btn.className = 'tf-btn selected-false border rounded-md px-6 py-2 font-bold shadow-md';
+        }
+        document.getElementById(`tf_ans_${qIndex}`).value = val;
+    }
+
+    // Matching Logic
+    let matchState = { activeA: null, connections: [], colorIdx: 0 };
+    function handleMatchClick(col, el) {
+        if(isSubmitted) return;
+        
+        if (col === 'a') {
+            // Remove existing connection for this A
+            const existConnIdx = matchState.connections.findIndex(c => c.a === el);
+            if (existConnIdx > -1) {
+                const conn = matchState.connections[existConnIdx];
+                conn.a.className = "match-item col-a border-2 border-gray-200 rounded-xl p-4 text-center text-gray-700 bg-white hover:border-purple-300";
+                conn.b.className = "match-item col-b border-2 border-gray-200 rounded-xl p-4 text-center text-gray-700 bg-white hover:border-purple-300";
+                matchState.connections.splice(existConnIdx, 1);
+            }
+
+            document.querySelectorAll('#match-col-a .match-item').forEach(i => i.classList.remove('active'));
+            el.classList.add('active');
+            matchState.activeA = el;
+        } else if (col === 'b') {
+            if (!matchState.activeA) return; // Must select A first
+            
+            // Remove existing connection for this B
+            const existConnIdx = matchState.connections.findIndex(c => c.b === el);
+            if (existConnIdx > -1) {
+                const conn = matchState.connections[existConnIdx];
+                conn.a.className = "match-item col-a border-2 border-gray-200 rounded-xl p-4 text-center text-gray-700 bg-white hover:border-purple-300";
+                matchState.connections.splice(existConnIdx, 1);
+            }
+
+            // Create connection
+            const colorClass = `match-color-${matchState.colorIdx % 4}`;
+            matchState.activeA.className = `match-item col-a border-2 rounded-xl p-4 text-center ${colorClass}`;
+            el.className = `match-item col-b border-2 rounded-xl p-4 text-center ${colorClass}`;
+            
+            matchState.connections.push({ a: matchState.activeA, b: el, color: colorClass });
+            
+            matchState.activeA.classList.remove('active');
+            matchState.activeA = null;
+            matchState.colorIdx++;
+        }
+    }
+
+    // Drag and Drop Logic
+    function allowDrop(ev) {
+        if(isSubmitted) return;
+        ev.preventDefault();
+        if (ev.target.classList.contains('dropzone')) {
+            ev.target.classList.add('drag-over');
+        }
+    }
+    
+    document.addEventListener('dragleave', (ev) => {
+        if (ev.target.classList.contains('dropzone')) {
+            ev.target.classList.remove('drag-over');
+        }
+    });
+
+    function drag(ev) {
+        if(isSubmitted) return;
+        ev.dataTransfer.setData("text", ev.target.id);
+        // Clear tap selection if drag starts
+        if(tapState.selectedItem) {
+            tapState.selectedItem.classList.remove('tap-selected');
+            tapState.selectedItem = null;
+        }
+    }
+
+    function drop(ev) {
+        if(isSubmitted) return;
+        ev.preventDefault();
+        
+        let target = ev.target;
+        // Ensure drop on dropzone or source container
+        while(target && !target.classList.contains('dropzone') && target.id !== 'dnd-source') {
+            target = target.parentElement;
+        }
+        
+        if (target) {
+            target.classList.remove('drag-over');
+            var data = ev.dataTransfer.getData("text");
+            const element = document.getElementById(data);
+            
+            if(element) {
+                // If dropzone already has an item, move it back to source
+                if(target.classList.contains('dropzone')) {
+                    const existingItem = target.querySelector('.draggable');
+                    if(existingItem) {
+                        document.getElementById('dnd-source').appendChild(existingItem);
+                    }
+                    const hint = target.querySelector('.drop-hint');
+                    if(hint) hint.style.display = 'none';
+                }
+                
+                target.appendChild(element);
+                
+                // Show hints in empty dropzones
+                document.querySelectorAll('.dropzone').forEach(zone => {
+                    const hint = zone.querySelector('.drop-hint');
+                    if(hint) {
+                        hint.style.display = zone.querySelectorAll('.draggable').length > 0 ? 'none' : 'block';
+                    }
+                });
+            }
+        }
+    }
+
+    // Mobile tap-to-select logic for Drag & Drop
+    let tapState = { selectedItem: null };
+    function handleTapSelect(el) {
+        if(isSubmitted) return;
+        if(tapState.selectedItem) {
+            tapState.selectedItem.classList.remove('tap-selected');
+        }
+        
+        if (tapState.selectedItem !== el) {
+            el.classList.add('tap-selected');
+            tapState.selectedItem = el;
+        } else {
+            tapState.selectedItem = null; // Toggle off
+        }
+    }
+    
+    function handleTapDrop(zone) {
+        if(isSubmitted) return;
+        if(!tapState.selectedItem) return;
+        
+        // Return existing item to source
+        const existingItem = zone.querySelector('.draggable');
+        if(existingItem) {
+            document.getElementById('dnd-source').appendChild(existingItem);
+        }
+        
+        zone.appendChild(tapState.selectedItem);
+        const hint = zone.querySelector('.drop-hint');
+        if(hint) hint.style.display = 'none';
+        
+        tapState.selectedItem.classList.remove('tap-selected');
+        tapState.selectedItem = null;
+    }
+
+    function gradeWorksheet() {
+        if (isSubmitted) return;
+        
+        // Validate student info
+        const studentName = document.getElementById('student-name').value.trim();
+        const studentClass = document.getElementById('student-class').value.trim();
+        
+        if (!studentName || !studentClass) {
+            alert("Vui lòng điền Họ và tên và Lớp của em trước khi nộp bài!");
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+
+        isSubmitted = true;
+        
+        const submitBtn = document.getElementById('submit-btn');
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> ĐANG NỘP BÀI...';
+
+        let totalScore = 0;
+        let globalCorrect = 0;
+        let globalWrong = 0;
+        let globalUnanswered = 0;
+        let globalTotal = 0;
+        
+        const config = appData.sections;
+
+        // 1. Grade MCQ
+        if (config.mcq.active) {
+            let correctCount = 0;
+            const blocks = document.querySelectorAll('#section-mcq .question-block');
+            blocks.forEach((block, index) => {
+                const correctAns = parseInt(block.getAttribute('data-ans'));
+                const selected = block.querySelector(`input[name="mcq_${index}"]:checked`);
+                const feedback = block.querySelector('.feedback');
+                feedback.classList.remove('hidden');
+                
+                const labels = block.querySelectorAll('.opt-label');
+                labels[correctAns].classList.add('bg-green-100', 'border-green-500'); // Highlight correct
+                
+                if (selected) {
+                    const selVal = parseInt(selected.value);
+                    if (selVal === correctAns) {
+                        correctCount++;
+                        globalCorrect++;
+                        feedback.innerHTML = '<i class="fas fa-check-circle text-green-500"></i> Chính xác';
+                        feedback.classList.add('text-green-600');
+                    } else {
+                        globalWrong++;
+                        labels[selVal].classList.add('bg-red-100', 'border-red-500');
+                        feedback.innerHTML = `<i class="fas fa-times-circle text-red-500"></i> Sai. Đáp án đúng là: ${appData.sections.mcq.questions[index].opts[correctAns]}`;
+                        feedback.classList.add('text-red-600');
+                    }
+                } else {
+                    globalUnanswered++;
+                    feedback.innerHTML = `<i class="fas fa-exclamation-triangle text-yellow-500"></i> Chưa trả lời. Đáp án: ${appData.sections.mcq.questions[index].opts[correctAns]}`;
+                    feedback.classList.add('text-yellow-600');
+                }
+                globalTotal++;
+                // Disable inputs
+                block.querySelectorAll('input').forEach(i => i.disabled = true);
+            });
+            totalScore += (correctCount / config.mcq.questions.length) * config.mcq.points;
+        }
+
+        // 2. Grade Fill
+        if (config.fill.active) {
+            let correctCount = 0;
+            const blocks = document.querySelectorAll('#section-fill .question-block');
+            blocks.forEach(block => {
+                const correctAns = block.getAttribute('data-ans');
+                const select = block.querySelector('select');
+                const selVal = select.value;
+                const feedback = block.querySelector('.feedback');
+                feedback.classList.remove('hidden');
+                
+                if (selVal === correctAns) {
+                    correctCount++;
+                    globalCorrect++;
+                    select.classList.add('correct-bg');
+                    feedback.innerHTML = '<i class="fas fa-check-circle text-green-500"></i> Đúng';
+                } else if (selVal !== "") {
+                    globalWrong++;
+                    select.classList.add('wrong-bg');
+                    feedback.innerHTML = `<i class="fas fa-times-circle text-red-500"></i> Sai. Đáp án đúng: <strong>${correctAns}</strong>`;
+                    feedback.classList.add('text-red-600');
+                } else {
+                    globalUnanswered++;
+                    feedback.innerHTML = `<i class="fas fa-exclamation-triangle text-yellow-500"></i> Chưa điền. Đáp án: <strong>${correctAns}</strong>`;
+                    feedback.classList.add('text-yellow-600');
+                }
+                globalTotal++;
+                select.disabled = true;
+            });
+            totalScore += (correctCount / config.fill.questions.length) * config.fill.points;
+        }
+
+        // 3. Grade True/False
+        if (config.tf.active) {
+            let correctCount = 0;
+            const blocks = document.querySelectorAll('#section-tf .question-block');
+            blocks.forEach((block, index) => {
+                const correctAns = block.getAttribute('data-ans') === 'true';
+                const inputVal = document.getElementById(`tf_ans_${index}`).value;
+                const feedback = block.querySelector('.feedback');
+                feedback.classList.remove('hidden');
+                
+                if (inputVal !== "") {
+                    const selVal = inputVal === 'true';
+                    if (selVal === correctAns) {
+                        correctCount++;
+                        globalCorrect++;
+                        block.classList.add('correct-bg');
+                        feedback.innerHTML = '<i class="fas fa-check-circle text-green-600"></i> Đúng';
+                    } else {
+                        globalWrong++;
+                        block.classList.add('wrong-bg');
+                        feedback.innerHTML = `<i class="fas fa-times-circle text-red-600"></i> Sai. Đáp án đúng: <strong>${correctAns ? 'ĐÚNG' : 'SAI'}</strong>`;
+                    }
+                } else {
+                    globalUnanswered++;
+                    feedback.innerHTML = `<i class="fas fa-exclamation-triangle text-yellow-600"></i> Chưa chọn. Đáp án: <strong>${correctAns ? 'ĐÚNG' : 'SAI'}</strong>`;
+                }
+                globalTotal++;
+                
+                block.querySelectorAll('button').forEach(b => {
+                    b.disabled = true;
+                    b.classList.add('opacity-80', 'cursor-not-allowed');
+                });
+            });
+            totalScore += (correctCount / config.tf.questions.length) * config.tf.points;
+        }
+
+        // 4. Grade Matching
+        if (config.match.active) {
+            let correctCount = 0;
+            const totalPairs = config.match.pairs.length;
+            globalTotal += totalPairs;
+            
+            // Mark all items with overlay to prevent clicks and show it's done
+            document.querySelectorAll('.match-item').forEach(el => el.classList.add('opacity-70', 'cursor-not-allowed'));
+            
+            let matchedPairsCount = matchState.connections.length;
+            globalUnanswered += (totalPairs - matchedPairsCount);
+            
+            matchState.connections.forEach(conn => {
+                const origA = conn.a.getAttribute('data-orig');
+                const origB = conn.b.getAttribute('data-orig');
+                
+                if (origA === origB) {
+                    correctCount++;
+                    globalCorrect++;
+                    conn.a.innerHTML += ' <i class="fas fa-check-circle text-green-600 ml-2"></i>';
+                    conn.b.innerHTML += ' <i class="fas fa-check-circle text-green-600 ml-2"></i>';
+                    conn.a.classList.replace(conn.color, 'match-color-1'); // Greenish
+                    conn.b.classList.replace(conn.color, 'match-color-1');
+                } else {
+                    globalWrong++;
+                    conn.a.innerHTML += ' <i class="fas fa-times-circle text-red-600 ml-2"></i>';
+                    conn.b.innerHTML += ' <i class="fas fa-times-circle text-red-600 ml-2"></i>';
+                    conn.a.classList.replace(conn.color, 'match-color-0'); // Reddish
+                    conn.b.classList.replace(conn.color, 'match-color-0');
+                }
+            });
+            
+            totalScore += (correctCount / totalPairs) * config.match.points;
+        }
+
+        // 5. Grade Drag & Drop
+        if (config.dnd.active) {
+            let correctCount = 0;
+            const totalZones = config.dnd.zones.length;
+            globalTotal += totalZones;
+            
+            document.querySelectorAll('.dropzone').forEach(zone => {
+                const item = zone.querySelector('.draggable');
+                const expectedMatch = zone.getAttribute('data-target');
+                
+                if (item) {
+                    const actualMatch = item.getAttribute('data-match');
+                    item.setAttribute('draggable', 'false');
+                    item.classList.remove('cursor-pointer');
+                    
+                    if (actualMatch === expectedMatch) {
+                        correctCount++;
+                        globalCorrect++;
+                        zone.classList.add('correct-bg');
+                        item.classList.add('border-green-500', 'bg-green-50');
+                    } else {
+                        globalWrong++;
+                        zone.classList.add('wrong-bg');
+                        item.classList.add('border-red-500', 'bg-red-50');
+                    }
+                } else {
+                    globalUnanswered++;
+                    zone.classList.add('bg-gray-200');
+                    zone.innerHTML = '<span class="text-red-500 font-bold"><i class="fas fa-times"></i> Bỏ trống</span>';
+                }
+            });
+            // Disable remaining source items
+            document.querySelectorAll('#dnd-source .draggable').forEach(item => {
+                item.setAttribute('draggable', 'false');
+                item.classList.add('opacity-50', 'cursor-not-allowed');
+            });
+            
+            totalScore += (correctCount / totalZones) * config.dnd.points;
+        }
+
+        // Display Final Score
+        const resultBox = document.getElementById('result-box');
+        resultBox.classList.remove('hidden');
+        
+        // Scroll to result
+        resultBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Round to 2 decimals
+        totalScore = Math.round(totalScore * 100) / 100;
+        
+        document.getElementById('final-score').innerText = totalScore;
+        document.getElementById('max-score-display').innerText = appData.totalScore;
+        
+        const percentage = (totalScore / appData.totalScore) * 100;
+        const msgEl = document.getElementById('feedback-message');
+        if (percentage >= 80) {
+            msgEl.innerHTML = "Tuyệt vời! Em đã nắm rất vững kiến thức. 🎉";
+            msgEl.className = "text-xl font-bold text-green-600 mt-2";
+        } else if (percentage >= 50) {
+            msgEl.innerHTML = "Làm tốt lắm! Em xem lại một số lỗi nhỏ nhé. 👍";
+            msgEl.className = "text-xl font-bold text-blue-600 mt-2";
+        } else {
+            msgEl.innerHTML = "Cố gắng lên! Em hãy đọc lại Ghi nhớ siêu nhanh bên dưới. 💪";
+            msgEl.className = "text-xl font-bold text-orange-600 mt-2";
+        }
+
+        // --- GỬI DỮ LIỆU LÊN GOOGLE SHEETS ---
+        // THAY THẾ URL WEB APP CỦA BẠN VÀO DÒNG DƯỚI ĐÂY:
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw8yDuAiAnBcY_m1L-b0tcAJ-afKb1s6QdAC6A9M60mHEbz1L1P_4yOZb7HmLDX_pD8fg/exec';
+        
+        const payload = {
+            hoTen: studentName,
+            lop: studentClass,
+            diem: totalScore,
+            cauDung: globalCorrect,
+            cauSai: globalWrong,
+            chuaLam: globalUnanswered,
+            tongCau: globalTotal
+        };
+
+        if(GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== 'DÁN_URL_WEB_APP_VÀO_ĐÂY') {
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors', // Sử dụng no-cors để gửi từ web tĩnh mà không bị chặn CORS
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(() => {
+                submitBtn.innerHTML = '<i class="fas fa-check mr-2"></i> ĐÃ NỘP BÀI VÀ LƯU KẾT QUẢ';
+            })
+            .catch(error => {
+                console.error('Lỗi khi lưu kết quả:', error);
+                submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i> ĐÃ NỘP BÀI (LỖI LƯU TRỮ)';
+            });
+        } else {
+            submitBtn.innerHTML = '<i class="fas fa-check mr-2"></i> ĐÃ NỘP BÀI (CHƯA CẤU HÌNH SHEET)';
+            console.log('Chưa cấu hình URL Google Script. Dữ liệu nộp:', payload);
+        }
+    }
+
+    function openAdmin() {
+        document.getElementById('admin-login-modal').classList.remove('hidden');
+        document.getElementById('admin-pwd').value = '';
+        document.getElementById('admin-err').classList.add('hidden');
+        document.getElementById('admin-pwd').focus();
+    }
+    
+    function closeAdminLogin() {
+        document.getElementById('admin-login-modal').classList.add('hidden');
+    }
+    
+    function verifyAdmin() {
+        const pwd = document.getElementById('admin-pwd').value;
+        if (pwd === '1230') {
+            closeAdminLogin();
+            showAdminPanel();
+        } else {
+            document.getElementById('admin-err').classList.remove('hidden');
+        }
+    }
+
+    function showAdminPanel() {
+        document.getElementById('admin-panel').classList.remove('hidden');
+        
+        // Populate inputs
+        document.getElementById('cfg-title').value = appData.title;
+        document.getElementById('cfg-total-score').value = appData.totalScore;
+        
+        // Populate sections table
+        const tbody = document.getElementById('config-sections-body');
+        tbody.innerHTML = '';
+        
+        Object.values(appData.sections).forEach(sec => {
+            tbody.innerHTML += `
+                <tr class="border-b">
+                    <td class="p-3 font-medium text-gray-800">${sec.name}</td>
+                    <td class="p-3 text-center">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="cfg-active-${sec.id}" class="sr-only peer section-toggle" ${sec.active ? 'checked' : ''} onchange="updateTotalConfigScore()">
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                    </td>
+                    <td class="p-3 text-center">
+                        <input type="number" id="cfg-score-${sec.id}" class="w-20 border border-gray-300 rounded px-2 py-1 text-center section-score" value="${sec.points}" step="0.5" onchange="updateTotalConfigScore()">
+                    </td>
+                </tr>
+            `;
+        });
+        
+        // Populate DnD Image Config
+        const dndContainer = document.getElementById('admin-dnd-items');
+        dndContainer.innerHTML = '';
+        appData.sections.dnd.items.forEach((item, idx) => {
+            const label = appData.sections.dnd.zones.find(z => z.id === item.matchId)?.label || '';
+            dndContainer.innerHTML += `
+                <div class="flex items-center gap-4 p-3 bg-gray-50 border rounded">
+                    <div class="flex-1">
+                        <p class="font-medium text-sm">Mục tiêu: <span class="text-blue-600">${label}</span></p>
+                        <p class="text-xs text-gray-500 truncate" id="dnd-preview-${item.id}">Hiện tại: ${item.type === 'text' ? item.content : 'Hình ảnh đính kèm'}</p>
+                    </div>
+                    <div>
+                        <input type="file" id="file-${item.id}" accept="image/*" class="hidden" onchange="handleImageUpload(event, '${item.id}')">
+                        <button onclick="document.getElementById('file-${item.id}').click()" class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded text-sm transition"><i class="fas fa-image"></i> Đổi ảnh</button>
+                    </div>
+                </div>
+            `;
+        });
+
+        updateTotalConfigScore();
+    }
+    
+    function closeAdminPanel() {
+        document.getElementById('admin-panel').classList.add('hidden');
+    }
+
+    function updateTotalConfigScore() {
+        let sum = 0;
+        Object.values(appData.sections).forEach(sec => {
+            const isActive = document.getElementById(`cfg-active-${sec.id}`).checked;
+            const points = parseFloat(document.getElementById(`cfg-score-${sec.id}`).value) || 0;
+            if (isActive) sum += points;
+        });
+        
+        document.getElementById('current-distributed-score').innerText = sum;
+        const targetTotal = parseFloat(document.getElementById('cfg-total-score').value) || 0;
+        
+        const warn = document.getElementById('score-warning');
+        if (Math.abs(sum - targetTotal) > 0.01) { // Floating point comparison
+            warn.classList.remove('hidden');
+            document.getElementById('current-distributed-score').classList.replace('text-blue-600', 'text-red-600');
+        } else {
+            warn.classList.add('hidden');
+            document.getElementById('current-distributed-score').classList.replace('text-red-600', 'text-blue-600');
+        }
+    }
+
+    // Handle Image Upload for Drag & Drop
+    function handleImageUpload(event, itemId) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Update internal temp data
+                const item = appData.sections.dnd.items.find(i => i.id === itemId);
+                if(item) {
+                    item.type = 'image';
+                    item.content = e.target.result;
+                    document.getElementById(`dnd-preview-${itemId}`).innerText = `Đã chọn ảnh mới`;
+                    document.getElementById(`dnd-preview-${itemId}`).classList.add('text-green-600');
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function saveConfig() {
+        const targetTotal = parseFloat(document.getElementById('cfg-total-score').value) || 0;
+        let sum = 0;
+        Object.values(appData.sections).forEach(sec => {
+            const isActive = document.getElementById(`cfg-active-${sec.id}`).checked;
+            const points = parseFloat(document.getElementById(`cfg-score-${sec.id}`).value) || 0;
+            if (isActive) sum += points;
+        });
+
+        if (Math.abs(sum - targetTotal) > 0.01) {
+            alert(`Cảnh báo: Tổng điểm phân bổ (${sum}) chưa khớp với Tổng điểm toàn phiếu (${targetTotal}). Vui lòng điều chỉnh lại!`);
+            return;
+        }
+
+        // Apply changes
+        appData.title = document.getElementById('cfg-title').value;
+        appData.totalScore = targetTotal;
+        
+        Object.values(appData.sections).forEach(sec => {
+            sec.active = document.getElementById(`cfg-active-${sec.id}`).checked;
+            sec.points = parseFloat(document.getElementById(`cfg-score-${sec.id}`).value) || 0;
+        });
+
+        // Save to LocalStorage
+        try {
+            localStorage.setItem('pht_lien_ket_ion_config', JSON.stringify(appData));
+        } catch(e) {
+            console.warn("Could not save to localStorage. Maybe quota exceeded due to large images.", e);
+        }
+
+        closeAdminPanel();
+        
+        // Reset and Rerender
+        document.getElementById('result-box').classList.add('hidden');
+        document.getElementById('submit-btn').classList.remove('opacity-50', 'cursor-not-allowed');
+        document.getElementById('submit-btn').innerText = "NỘP BÀI & CHẤM ĐIỂM";
+        renderWorksheet();
+        alert("Đã lưu cấu hình và cập nhật Phiếu học tập!");
+    }
+
+    function resetConfig() {
+        if(confirm("Bạn có chắc muốn khôi phục dữ liệu mặc định ban đầu không? Mọi tùy chỉnh và hình ảnh tải lên sẽ bị xóa.")) {
+            localStorage.removeItem('pht_lien_ket_ion_config');
+            appData = JSON.parse(JSON.stringify(defaultData));
+            showAdminPanel(); // Refresh admin view
+        }
+    }
+
+    // Initialize App
+    window.onload = () => {
+        loadConfig();
+        renderWorksheet();
+    };
+
+</script>
+</body>
+</html>
